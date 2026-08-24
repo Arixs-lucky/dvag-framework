@@ -1,0 +1,16 @@
+[
+    {
+        "question": "Bob is in Shanghai and going to travel in several cities, please make a ticket purchase plan and travel sequence for him.The demands are as follows:\n1. visit ['Hangzhou']. The order doesn't matter and he needs to return to Shanghai finally.\n2. 5 days (2023-07-03 00:00 ~ 2023-07-08 00:00) for this trip.\n3. Play at least 1 day in Hangzhou.\n4. Stay in any city for a minimum of 24 hours to count as one day.\n5. On the basis of completing the above conditions (especially the time limit), spend as little money as possible.",
+        "plan": [
+            "stay_in(\"Shanghai\",\"2023-07-03 00:00\",\"2023-07-03 16:20\")",
+            "go_to_city(\"Shanghai\",\"Hangzhou\",\"2023-07-03 16:20\",\"2023-07-03 18:00\",\"K1748\")",
+            "stay_in(\"Hangzhou\",\"2023-07-03 18:00\",\"2023-07-05 08:44\")",
+            "go_to_city(\"Hangzhou\",\"Shanghai\",\"2023-07-05 08:44\",\"2023-07-05 10:26\",\"K2358\")",
+            "stay_in(\"Shanghai\",\"2023-07-05 10:26\",\"2023-07-08 00:00\")"
+        ],
+        "errors": [],
+        "score": 100.0,
+        "over": true,
+        "state": "{'error': [], 'cost': 0, 'track': [{'begin_time': datetime.datetime(2023, 7, 3, 0, 0), 'end_time': datetime.datetime(2023, 7, 3, 16, 20), 'action': 'stay_in'}, {'begin_time': datetime.datetime(2023, 7, 3, 16, 20), 'end_time': datetime.datetime(2023, 7, 3, 18, 0), 'action': 'go_to_city'}, {'begin_time': datetime.datetime(2023, 7, 3, 18, 0), 'end_time': datetime.datetime(2023, 7, 5, 8, 44), 'action': 'stay_in'}, {'begin_time': datetime.datetime(2023, 7, 5, 8, 44), 'end_time': datetime.datetime(2023, 7, 5, 10, 26), 'action': 'go_to_city'}, {'begin_time': datetime.datetime(2023, 7, 5, 10, 26), 'end_time': datetime.datetime(2023, 7, 8, 0, 0), 'action': 'stay_in'}], 'days_Shanghai': 2, 'days_Hangzhou': 1, 'e_right': 12, 'e_wrong': 0, 'i_right': 2, 'i_wrong': 0}"
+    }
+]
