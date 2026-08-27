@@ -14,7 +14,7 @@ LLM_BACKEND = "openai_compatible"
 #   Qwen:      LLM_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1", LLM_MODEL = "qwen-plus"
 #   其他兼容:  LLM_BASE_URL = "你的API地址/v1",                    LLM_MODEL = "你的模型名"
 LLM_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
-LLM_API_KEY = "替换为你的 API Key"  # 替换为你的 API Key
+LLM_API_KEY = "替换为你的 API Key"  #
 LLM_MODEL = "deepseek-v4-flash-ga-260731"
 
 # --- 如果 LLM_BACKEND = "openai" ---

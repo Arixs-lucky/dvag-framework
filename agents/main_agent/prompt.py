@@ -1,9 +1,87 @@
+# =============================================================================
+# 两阶段图生成 Prompt
+# =============================================================================
+
+# ── 阶段一：节点清单 Prompt ──
+node_list_system = '''You are a task decomposition expert. Given a task, your job is to decompose it into a set of independent or semi-independent subtask nodes.
+
+IMPORTANT RULES:
+1. Each node should represent a clear, actionable subtask.
+2. Node IDs should be short identifiers like "node_1", "node_2", etc.
+3. Descriptions should be concise but specific.
+4. Return ONLY a valid JSON array, nothing else.
+5. Think carefully about how many nodes you need — typically 3 to 8 nodes are sufficient.
+
+Output format (JSON array of objects, each with "id" and "desc" fields):
+[
+  {"id": "node_1", "desc": "<task description>"},
+  {"id": "node_2", "desc": "<task description>"}
+]'''
+
+NODE_LIST_PROMPT = f'''{node_list_system}
+
+Task:
+{{{{task}}}}
+
+Return the JSON array of nodes now.'''
+
+# ── 阶段二：依赖声明收集 Prompt ──
+dependency_system = '''You are a dependency analysis expert. Given a set of subtask nodes and their descriptions, determine which nodes depend on which other nodes.
+
+Dependency types:
+- TIME: The later node needs timing information (schedule, departure, arrival) from the earlier node.
+- LOCATION: The later node needs location data (city, hotel, spot) from the earlier node.
+- COST: The later node needs budget/cost information from the earlier node.
+- CATEGORY: General dependency (the later node refines based on the earlier node's result).
+
+Rules:
+1. Each node can depend on at most {MAX_INDEGREE} other nodes.
+2. If a node has no dependencies, return an empty array.
+3. Only reference node IDs that exist in the provided node list.
+4. Return ONLY a valid JSON array, nothing else.
+
+Output format (JSON array of objects):
+[
+  {"from": "node_1", "label": "TIME"},
+  {"from": "node_3", "label": "COST"}
+]
+If no dependencies, return: []'''
+
+DEPENDENCY_PROMPT = f'''{dependency_system}
+
+All available nodes:
+{{{{all_nodes}}}}
+
+Current node to analyze: id="{{{{node_id}}}}", desc="{{{{node_desc}}}}"
+
+Return the list of dependencies for this node now.'''
+
 subtask_format = '''<subtask>{
 "subtask_name": string, name of the subtask
 "goal": string, the main purpose of the subtask, and what will you do to reach this goal?
 "criticism": string, what potential problems may the current subtask and goal have?
 "milestones": list[string]. what milestones should be achieved to ensure the subtask is done? Make it detailed and specific.
-"result_format": optional, what the result should be.}</subtask>'''
+"result_format": optional, what the result should be.
+"dependencies": list[string], optional. list of prerequisite subtask_names that must complete before this subtask starts.
+"edge_label": string, optional. dependency type: 'TIME', 'LOCATION', 'COST', 'CATEGORY'.</subtask>'''
+
+# Graph-based task description for the agent
+task_graph_instruction = '''TASK DEPENDENCY GRAPH
+The task is structured as a Directed Acyclic Graph (DAG) instead of a flat list.
+Each subtask is a node, and edges represent dependencies between subtasks.
+
+Dependency labels:
+- TIME: subtask B depends on subtask A for timing information
+- LOCATION: subtask B depends on subtask A for location data
+- COST: subtask B depends on subtask A for budget/cost data
+- CATEGORY: subtask B depends on subtask A for categorization
+
+Rules:
+1. A subtask with no dependencies can start immediately (in-degree 0).
+2. Multiple independent subtasks can run in parallel.
+3. A subtask can have at most {MAX_INDEGREE} incoming edges; if more are needed, keep the most critical ones.
+4. Always specify "dependencies" field when a subtask depends on others.
+5. If no dependencies, the "dependencies" field can be omitted or set to an empty list.'''
 
 TASK_DESCRIPTION = """TASK DESCRIPTION
 You need to make a travel plan based on the given requirements, taking into account transportation between cities and daily schedules.
@@ -20,7 +98,9 @@ e.g.
 \"2023-07-02 22:30\",\"2023-07-05 8:00\")</plan>
 Your ultimate goal is to give these plans, there is no need to do anything extra."""
 
-SYSTEM_PROMPT = f'''You are an autonomous intelligent agent tasked with making travel plans for Bob. To be successful, it is very important to follow the following rules:
+SYSTEM_PROMPT = f'''{task_graph_instruction}
+
+You are an autonomous intelligent agent tasked with making travel plans for Bob. To be successful, it is very important to follow the following rules:
 1. You should only issue one action at a time.
 2. You should reason step by step and then issue the next action.
 3. Your response should be formatted as follows:
@@ -35,6 +115,8 @@ PLAN AND SUBTASK:
 If the subtask cannot be easily solved directly or requires the use of external resources, please assign it to another agent to complete (such as "find the cheapest train from Beijing to Shanghai in 2023-7-1"), otherwise you can complete it yourself. You may need to wait for results from other agents before proceeding to the next step of the task. If you need help from other agents, please clearly describe the task objectives, background, and precautions of the subtask. 
 
 A subtask-structure has the following json component and surrounded with <subtask></subtask> as follows:
+{task_graph_instruction}
+{subtask_format}
 {subtask_format}
 Use "<action>subagent_handle(subtask_name)</action>" if you want to assign a subtask to other agents for completion.
 
